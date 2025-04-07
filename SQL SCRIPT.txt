@@ -1,0 +1,302 @@
+-- Drop existing tables and sequences
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Audit_Log CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Payment CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Bookings CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Seats CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Passengers CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Flights CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE flights_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE seats_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE passengers_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE bookings_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE payment_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP SEQUENCE audit_log_seq';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -2289 THEN NULL; END IF;
+END;
+/
+
+-- Create Tables
+CREATE TABLE Flights (
+    flight_id NUMBER PRIMARY KEY,
+    flight_number VARCHAR2(10) UNIQUE NOT NULL, -- Implicit index likely created here
+    departure VARCHAR2(50) NOT NULL,
+    destination VARCHAR2(50) NOT NULL,
+    departure_time DATE NOT NULL,
+    arrival_time DATE NOT NULL
+);
+
+CREATE TABLE Seats (
+    seat_id NUMBER PRIMARY KEY,
+    flight_id NUMBER REFERENCES Flights(flight_id) ON DELETE CASCADE,
+    seat_number VARCHAR2(5) NOT NULL,
+    class_type VARCHAR2(20) CHECK (class_type IN ('First Class', 'Business Class', 'Economy')),
+    booking_status VARCHAR2(10) DEFAULT 'Available' CHECK (booking_status IN ('Available', 'Booked'))
+);
+
+CREATE TABLE Passengers (
+    passenger_id NUMBER PRIMARY KEY,
+    full_name VARCHAR2(100) NOT NULL,
+    email VARCHAR2(100) UNIQUE NOT NULL, -- Implicit index likely created here
+    phone VARCHAR2(15) NOT NULL
+);
+
+CREATE TABLE Bookings (
+    booking_id NUMBER PRIMARY KEY,
+    flight_id NUMBER REFERENCES Flights(flight_id) ON DELETE CASCADE,
+    seat_id NUMBER REFERENCES Seats(seat_id) ON DELETE CASCADE,
+    passenger_id NUMBER REFERENCES Passengers(passenger_id) ON DELETE CASCADE,
+    booking_date DATE DEFAULT SYSDATE,
+    status VARCHAR2(10) DEFAULT 'Confirmed' CHECK (status IN ('Confirmed', 'Cancelled'))
+);
+
+CREATE TABLE Payment (
+    payment_id NUMBER PRIMARY KEY,
+    booking_id NUMBER REFERENCES Bookings(booking_id) ON DELETE CASCADE,
+    amount NUMBER(10, 2) NOT NULL,
+    payment_status VARCHAR2(20) DEFAULT 'Pending' CHECK (payment_status IN ('Pending', 'Completed', 'Failed'))
+);
+
+CREATE TABLE Audit_Log (
+    log_id NUMBER PRIMARY KEY,
+    booking_id NUMBER REFERENCES Bookings(booking_id) ON DELETE CASCADE,
+    action VARCHAR2(50) NOT NULL,
+    action_time TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+
+-- Create Sequences
+CREATE SEQUENCE flights_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE seats_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE passengers_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE bookings_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE payment_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE audit_log_seq START WITH 1 INCREMENT BY 1;
+
+-- Drop Existing Indexes (if they exist - keeping this part)
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX idx_flight_number';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -1418 THEN RAISE; END IF; -- Ignore if index does not exist
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX idx_seat_status';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -1418 THEN RAISE; END IF; -- Ignore if index does not exist
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX idx_passenger_email';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -1418 THEN RAISE; END IF; -- Ignore if index does not exist
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX idx_booking_status';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -1418 THEN RAISE; END IF; -- Ignore if index does not exist
+END;
+/
+
+-- Create Indexes
+-- Removed the CREATE INDEX statements for flight_number and email
+-- as UNIQUE constraints likely create them implicitly.
+-- CREATE INDEX idx_flight_number ON Flights(flight_number); -- Removed
+CREATE INDEX idx_seat_status ON Seats(booking_status);
+-- CREATE INDEX idx_passenger_email ON Passengers(email); -- Removed
+CREATE INDEX idx_booking_status ON Bookings(status);
+
+-- Create Trigger
+CREATE OR REPLACE TRIGGER assign_seat_trigger
+BEFORE INSERT ON Bookings
+FOR EACH ROW
+DECLARE
+    available_seat_id NUMBER;
+BEGIN
+    -- Find an available seat for the flight being booked
+    SELECT seat_id INTO available_seat_id
+    FROM Seats
+    WHERE flight_id = :NEW.flight_id AND booking_status = 'Available'
+    ORDER BY seat_id -- Or ORDER BY seat_number, depending on desired assignment order
+    FETCH FIRST 1 ROWS ONLY; -- Get only one seat
+
+    -- Update the found seat to 'Booked'
+    UPDATE Seats SET booking_status = 'Booked' WHERE seat_id = available_seat_id;
+
+    -- Assign the seat_id to the new booking record
+    :NEW.seat_id := available_seat_id;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        -- Raise an error if no seats are available
+        RAISE_APPLICATION_ERROR(-20001, 'No available seats for this flight.');
+END;
+/
+
+-- Create Function
+CREATE OR REPLACE FUNCTION get_available_seats(flight_num VARCHAR2)
+RETURN NUMBER IS
+    seat_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO seat_count
+    FROM Seats
+    WHERE flight_id = (SELECT flight_id FROM Flights WHERE flight_number = flight_num)
+    AND booking_status = 'Available';
+    RETURN seat_count;
+END;
+/
+
+-- Create Procedure
+CREATE OR REPLACE PROCEDURE cancel_booking(p_booking_id NUMBER) IS
+    v_seat_id NUMBER;
+BEGIN
+    -- Find the seat associated with this booking
+    SELECT seat_id INTO v_seat_id FROM Bookings WHERE booking_id = p_booking_id AND status != 'Cancelled'; -- Added check to avoid re-cancelling
+
+    -- Make the seat available again (only if a seat was found for a non-cancelled booking)
+    IF v_seat_id IS NOT NULL THEN
+        UPDATE Seats SET booking_status = 'Available' WHERE seat_id = v_seat_id;
+        
+        -- Mark the booking as Cancelled
+        UPDATE Bookings SET status = 'Cancelled' WHERE booking_id = p_booking_id;
+        
+        -- Log the cancellation action
+        INSERT INTO Audit_Log (log_id, booking_id, action, action_time)
+        VALUES (audit_log_seq.NEXTVAL, p_booking_id, 'Booking Cancelled', SYSTIMESTAMP);
+        
+        DBMS_OUTPUT.PUT_LINE('Booking Cancelled Successfully'); -- Ensure server output is enabled in your SQL client
+    ELSE
+        -- Handle case where booking is already cancelled or doesn't exist
+        DBMS_OUTPUT.PUT_LINE('Booking not found or already cancelled.');
+        RAISE_APPLICATION_ERROR(-20002, 'Booking not found or already cancelled.'); -- Optional: raise error
+    END IF;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+         -- This handles the case where the initial SELECT finds no booking with the ID
+        DBMS_OUTPUT.PUT_LINE('Booking not found.');
+        RAISE_APPLICATION_ERROR(-20002, 'Booking not found.');
+END;
+/
+
+-- Insert Sample Data
+-- Flight ID will be 1 (from flights_seq)
+INSERT INTO Flights (flight_id, flight_number, departure, destination, departure_time, arrival_time)
+VALUES (flights_seq.NEXTVAL, 'AC101', 'Toronto', 'New York', TO_DATE('2025-04-01 08:00', 'YYYY-MM-DD HH24:MI'), TO_DATE('2025-04-01 10:00', 'YYYY-MM-DD HH24:MI'));
+
+-- Seat IDs will be 1 and 2 (from seats_seq), associated with flight_id 1
+INSERT INTO Seats (seat_id, flight_id, seat_number, class_type, booking_status)
+VALUES (seats_seq.NEXTVAL, 1, '1A', 'Business Class', 'Available');
+INSERT INTO Seats (seat_id, flight_id, seat_number, class_type, booking_status)
+VALUES (seats_seq.NEXTVAL, 1, '2B', 'Economy', 'Available');
+
+-- Passenger ID will be 1 (from passengers_seq)
+INSERT INTO Passengers (passenger_id, full_name, email, phone)
+VALUES (passengers_seq.NEXTVAL, 'John Doe', 'johndoe@example.com', '123-456-7890');
+
+-- Booking ID will be 1 (from bookings_seq).
+-- seat_id is NULL here; the trigger 'assign_seat_trigger' will assign seat_id=1.
+INSERT INTO Bookings (booking_id, flight_id, seat_id, passenger_id, booking_date, status)
+VALUES (bookings_seq.NEXTVAL, 1, NULL, 1, SYSDATE, 'Confirmed');
+
+-- Payment ID will be 1 (from payment_seq), associated with booking_id 1
+INSERT INTO Payment (payment_id, booking_id, amount, payment_status)
+VALUES (payment_seq.NEXTVAL, 1, 500.00, 'Completed');
+
+-- Test Function (Should show 1 available seat after the booking trigger runs)
+SELECT get_available_seats('AC101') AS available_seats FROM dual;
+
+-- Test Procedure (Cancel the booking with booking_id = 1)
+EXEC cancel_booking(1);
+
+-- Verify Cancellation
+SELECT * FROM Bookings WHERE booking_id = 1;
+-- Check the seat directly (we know it was seat_id 1 initially)
+SELECT * FROM Seats WHERE seat_id = 1;
+SELECT * FROM Audit_Log WHERE booking_id = 1;
