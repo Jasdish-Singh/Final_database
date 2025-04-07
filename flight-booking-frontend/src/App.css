@@ -1,0 +1,389 @@
+/* src/App.css */
+
+/* --- Global Styles & Variables --- */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --light-color: #f8f9fa;
+  --dark-color: #343a40;
+  /* This is the background color OUTSIDE the main content */
+  --background-color: #eef2f5;
+  --container-bg: #ffffff;
+  --border-color: #dee2e6;
+  --text-color: #495057;
+  --link-color: var(--primary-color);
+  --font-family: 'Roboto', sans-serif;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 8px;
+  /* Define max-width for the centered content column */
+  --page-max-width: 1100px;
+}
+
+body {
+  font-family: var(--font-family);
+  margin: 0;
+  padding: 0;
+  /* Apply background color to the whole page */
+  background-color: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  /* Add some padding top/bottom to body for overall spacing */
+  padding-top: 20px;
+  padding-bottom: 20px;
+  /* Ensure body is aligned to enable centering of child elements */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- CENTERING RULES for Header, Main Container, and Footer --- */
+.app-header,
+.container,
+.app-footer,
+.flight-booking-portal,  /* Added this class for main app wrapper */
+.available-flights,      /* Added these classes based on the screenshot */
+.add-passenger,
+.create-booking,
+.your-bookings {
+  /* Set the maximum width of the content block */
+  max-width: var(--page-max-width);
+  width: 100%;
+
+  /* === THIS IS THE CENTERING MECHANISM === */
+  /* Auto margins distribute space equally left/right */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  /* ====================================== */
+
+  /* Include padding/border in the element's total width/height */
+  box-sizing: border-box;
+}
+
+/* Center any direct children of body if they don't have the above classes */
+body > * {
+  max-width: var(--page-max-width);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* --- Header Styling --- */
+.app-header {
+  margin-bottom: 30px; /* Space below header */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://www.lufthansa.com/content/dam/lh/images/frontify_variations/3/c-820586478-42548236.jpg.transform/lh-dcep-transform-width-1440/img.jpg');
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  padding: 40px 30px;
+  text-align: center;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.app-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 2.5em;
+  font-weight: 700;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.app-header p {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 300;
+}
+
+/* --- Main Container Styling --- */
+.container {
+  padding-left: 0; /* No horizontal padding needed on container itself */
+  padding-right: 0;
+  margin-top: 0; /* Spacing handled by header margin-bottom */
+  margin-bottom: 30px; /* Space above footer */
+  display: flex;
+  flex-direction: column;
+  gap: 30px; /* Space between sections inside container */
+}
+
+/* --- Section Styling --- */
+.section {
+  background-color: var(--container-bg);
+  padding: 25px 30px; /* Internal padding for section content */
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
+
+.section h2 {
+  color: var(--primary-color);
+  margin-top: 0;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--light-color);
+  font-weight: 700;
+  font-size: 1.6em;
+}
+
+/* --- Grid for Form Sections --- */
+.form-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+/* --- List Styling (Flights, Bookings) --- */
+.item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item-list li {
+  background-color: var(--light-color);
+  margin-bottom: 15px;
+  padding: 15px 20px;
+  border-radius: var(--border-radius);
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.item-list li:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.flight-item .flight-icon,
+.booking-item .booking-icon {
+  font-size: 1.8em;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.flight-item .flight-details,
+.booking-item .booking-details {
+  flex-grow: 1;
+}
+
+.flight-item .flight-price {
+  font-weight: bold;
+  color: var(--success-color);
+  font-size: 1.1em;
+  white-space: nowrap;
+  margin-left: auto;
+  padding-left: 15px;
+}
+
+/* --- Form Styling --- */
+.data-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.data-form label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+  font-size: 0.95em;
+  color: var(--secondary-color);
+}
+
+.data-form input[type="text"],
+.data-form input[type="email"],
+.data-form input[type="tel"],
+.data-form select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+  font-size: 1em;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.data-form input:focus,
+.data-form select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+.data-form select:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.hint-text {
+  font-size: 0.85em;
+  color: var(--secondary-color);
+  margin-top: 5px;
+  display: block;
+}
+
+/* --- Button Styling --- */
+.button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  align-self: flex-start;
+}
+
+.button-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.button-primary:hover {
+  background-color: #0056b3;
+}
+
+.button:disabled {
+  background-color: var(--secondary-color);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+
+/* --- Message Styling (Error/Success/Loading) --- */
+.message {
+    padding: 15px 20px;
+    /* Spacing handled by container gap or explicit margins if needed */
+    /* margin-bottom: 20px; */
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+    font-weight: bold;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.success-message {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.loading-message {
+  font-style: italic;
+  color: var(--secondary-color);
+  text-align: center;
+  padding: 20px;
+}
+
+/* --- Footer Styling --- */
+.app-footer {
+  margin-top: 0; /* Spacing handled by container margin-bottom */
+  margin-bottom: 0; /* Spacing handled by body padding-bottom */
+  padding: 20px;
+  background-color: var(--dark-color);
+  color: var(--light-color);
+  font-size: 0.9em;
+  text-align: center;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* --- Flight Booking Portal Specific Styling --- */
+.flight-booking-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.available-flights,
+.add-passenger,
+.create-booking,
+.your-bookings {
+  background-color: var(--container-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+/* --- Responsive Adjustments --- */
+/* For screens narrower than the max-width */
+@media (max-width: 1150px) {
+  .app-header,
+  .container,
+  .app-footer,
+  .flight-booking-portal,
+  .available-flights,
+  .add-passenger,
+  .create-booking,
+  .your-bookings {
+    max-width: none; /* Remove the fixed max-width */
+    /* Add side margins so content doesn't touch screen edges */
+    margin-left: 15px !important;
+    margin-right: 15px !important;
+  }
+}
+
+/* For smaller mobile screens */
+@media (max-width: 768px) {
+    .app-header h1 {
+        font-size: 2em;
+    }
+    .app-header p {
+        font-size: 1em;
+    }
+    .form-sections-grid {
+        grid-template-columns: 1fr; /* Stack forms */
+    }
+    .section {
+        padding: 20px; /* Reduce padding */
+    }
+    .item-list li {
+        flex-direction: column; /* Stack list item content */
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .flight-item .flight-price {
+        margin-left: 0;
+        padding-left: 0;
+        margin-top: 5px;
+        align-self: flex-start;
+    }
+     /* Adjust margins for smaller screens */
+    .app-header, 
+    .container, 
+    .app-footer,
+    .flight-booking-portal,
+    .available-flights,
+    .add-passenger,
+    .create-booking,
+    .your-bookings {
+      margin-left: 10px !important;
+      margin-right: 10px !important;
+    }
+    .app-header {
+      padding: 30px 20px; /* Adjust header padding */
+    }
+}
